@@ -1,15 +1,21 @@
 version: "3.8"
 
 services:
-  order-service:
+  kitchen-api:
     build: .
     ports:
       - "3002:3002"
     env_file:
       - .env
     environment:
-      PORT: ${PORT}
+      PORT: 3002
       DATABASE_URL: ${DATABASE_URL}
       ORDER_URL: ${ORDER_URL}
       DELIVERY_URL: ${DELIVERY_URL}
       NOTIFICATION_URL: ${NOTIFICATION_URL}
+    networks:
+      - shoong-network
+
+networks:
+  shoong-network:
+    external: true
