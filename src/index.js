@@ -11,11 +11,11 @@ app.use(express.json());
 const cors = require("cors");
 app.use(cors());
 
-// Health Check (EKS probe용)
+// Health Check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// 조리 시작: POST /kitchen/start
-app.post('/kitchen/start', async (req, res) => {
+// 조리 시작: POST /start
+app.post('/start', async (req, res) => {
   try {
     const { order_id } = req.body;
 
@@ -31,11 +31,11 @@ app.post('/kitchen/start', async (req, res) => {
       },
     });
 
-    await axios.patch(`${process.env.ORDER_URL}/orders/${order_id}/status`, {
+    await axios.patch(`${process.env.ORDER_API_URL}/order/${order_id}/status`, {
       status: 'COOKING',
     });
 
-    await axios.post(`${process.env.NOTIFICATION_URL}/notify`, {
+    await axios.post(`${process.env.NOTIFICATION_API_URL}/notify`, {
       type: 'kitchen',
       message: '조리가 시작되었습니다',
       user_id: order.user_id,
@@ -49,8 +49,8 @@ app.post('/kitchen/start', async (req, res) => {
   }
 });
 
-// 조리 완료: POST /kitchen/complete
-app.post('/kitchen/complete', async (req, res) => {
+// 조리 완료: POST /complete
+app.post('/complete', async (req, res) => {
   try {
     const { order_id } = req.body;
 
@@ -66,15 +66,15 @@ app.post('/kitchen/complete', async (req, res) => {
       },
     });
 
-    await axios.patch(`${process.env.ORDER_URL}/orders/${order_id}/status`, {
+    await axios.patch(`${process.env.ORDER_API_URL}/order/${order_id}/status`, {
       status: 'COOKED',
     });
 
-    await axios.post(`${process.env.DELIVERY_URL}/delivery/assign`, {
+    await axios.post(`${process.env.DELIVERY_API_URL}/delivery/assign`, {
       order_id,
     });
 
-    await axios.post(`${process.env.NOTIFICATION_URL}/notify`, {
+    await axios.post(`${process.env.NOTIFICATION_API_URL}/notify`, {
       type: 'kitchen',
       message: '조리가 완료되었습니다',
       user_id: order.user_id,
