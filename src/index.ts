@@ -1,27 +1,23 @@
-require('dotenv').config();
-const express = require('express');
-const axios = require('axios');
-const { PrismaClient } = require('@prisma/client');
+import 'dotenv/config';
+import express, { Request, Response } from 'express';
+import axios from 'axios';
+import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-
 const app = express();
 app.use(express.json());
-
-const cors = require("cors");
 app.use(cors());
 
 // Health Check
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 
 // 조리 시작: POST /start
-app.post('/start', async (req, res) => {
+app.post('/start', async (req: Request, res: Response) => {
   try {
-    const { order_id } = req.body;
+    const { order_id } = req.body as { order_id: number };
 
-    const order = await prisma.order.findUnique({
-      where: { id: order_id },
-    });
+    const order = await prisma.order.findUnique({ where: { id: order_id } });
 
     const kitchenOrder = await prisma.kitchenOrder.create({
       data: {
@@ -31,32 +27,27 @@ app.post('/start', async (req, res) => {
       },
     });
 
-    await axios.patch(`${process.env.ORDER_API_URL}/${order_id}/status`, {
-      status: 'COOKING',
-    });
-
+    await axios.patch(`${process.env.ORDER_API_URL}/${order_id}/status`, { status: 'COOKING' });
     await axios.post(`${process.env.NOTIFICATION_API_URL}`, {
       type: 'kitchen',
       message: '조리가 시작되었습니다',
-      user_id: order.user_id,
+      user_id: order?.user_id,
       order_id,
     });
 
     res.status(201).json({ success: true, data: kitchenOrder });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
 
 // 조리 완료: POST /complete
-app.post('/complete', async (req, res) => {
+app.post('/complete', async (req: Request, res: Response) => {
   try {
-    const { order_id } = req.body;
+    const { order_id } = req.body as { order_id: number };
 
-    const order = await prisma.order.findUnique({
-      where: { id: order_id },
-    });
+    const order = await prisma.order.findUnique({ where: { id: order_id } });
 
     const kitchenOrder = await prisma.kitchenOrder.update({
       where: { order_id },
@@ -66,25 +57,19 @@ app.post('/complete', async (req, res) => {
       },
     });
 
-    await axios.patch(`${process.env.ORDER_API_URL}/${order_id}/status`, {
-      status: 'COOKED',
-    });
-
-    await axios.post(`${process.env.DELIVERY_API_URL}/assign`, {
-      order_id,
-    });
-
+    await axios.patch(`${process.env.ORDER_API_URL}/${order_id}/status`, { status: 'COOKED' });
+    await axios.post(`${process.env.DELIVERY_API_URL}/assign`, { order_id });
     await axios.post(`${process.env.NOTIFICATION_API_URL}`, {
       type: 'kitchen',
       message: '조리가 완료되었습니다',
-      user_id: order.user_id,
+      user_id: order?.user_id,
       order_id,
     });
 
     res.json({ success: true, data: kitchenOrder });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
 
