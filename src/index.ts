@@ -73,8 +73,9 @@ app.post('/complete', async (req: Request, res: Response) => {
   }
 });
 
-const server = app.listen(process.env.PORT, () =>
-  console.log(`[kitchen-service] :${process.env.PORT}`)
+const PORT = process.env.PORT || 3002;
+const server = app.listen(PORT, () =>
+  console.log(`[kitchen-service] :${PORT}`)
 );
 
 process.on('SIGTERM', async () => {
